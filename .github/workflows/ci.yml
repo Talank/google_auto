@@ -1,19 +1,14 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
+  workflow_dispatch:
 jobs:
   test:
     name: "JDK ${{ matrix.java }}"
     strategy:
       matrix:
-        java: [ 8, 11, 17 ]
+        java: [8, 11, 17]
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       # Cancel any previous runs for the same branch that are still running.
@@ -45,7 +40,7 @@ jobs:
   publish_snapshot:
     name: 'Publish snapshot'
     needs: test
-    if: github.event_name == 'push' && github.repository == 'google/auto'
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: 'Check out repository'
@@ -71,12 +66,14 @@ jobs:
           CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
         run: ./util/publish-snapshot-on-commit.sh
 
+    strategy:
+      fail-fast: false
   generate_docs:
     permissions:
       contents: write
     name: 'Generate latest docs'
     needs: test
-    if: github.event_name == 'push' && github.repository == 'google/auto'
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: 'Check out repository'
@@ -97,3 +94,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./util/generate-latest-docs.sh
+    strategy:
+      fail-fast: false
